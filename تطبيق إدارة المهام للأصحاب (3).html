@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تطبيق إدارة المهام للأصحاب</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Cairo', sans-serif;
+        }
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 6px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between selection:bg-indigo-500 selection:text-white">
+
+    <header class="bg-slate-900/80 backdrop-blur-md border-b border-slate-800 sticky top-0 z-40 px-4 py-3">
+        <div class="max-w-5xl mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-3 space-x-reverse">
+                <div class="bg-gradient-to-tr from-indigo-600 to-violet-500 w-10 h-10 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/30 text-xl font-black">
+                    🚀
+                </div>
+                <div>
+                    <h1 class="font-black text-lg text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-violet-300">منصة Loge_Si</h1>
+                    <p class="text-xs text-slate-400 font-semibold" id="headerUserRole">غير مسجل</p>
+                </div>
+            </div>
+
+            <div id="headerActions" class="hidden flex items-center gap-3">
+                <span id="headerUsername" class="text-sm font-bold text-slate-300 bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700"></span>
+                <button onclick="logout()" class="bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 px-3 py-1.5 rounded-lg text-xs font-bold transition">
+                    تسجيل الخروج
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-5xl mx-auto p-4 md:p-6 w-full flex-grow">
+
+        <!-- ================= AUTH SECTION ================= -->
+        <section id="authSection" class="max-w-md mx-auto my-8 bg-slate-900 border border-slate-800 rounded-3xl p-6 md:p-8 shadow-2xl relative overflow-hidden">
+            <div class="absolute -top-12 -right-12 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl"></div>
+            <div class="absolute -bottom-12 -left-12 w-32 h-32 bg-violet-500/10 rounded-full blur-2xl"></div>
+
+            <div class="relative z-10">
+                <h2 class="text-2xl font-black text-center mb-2 text-white">تسجيل الدخول</h2>
+                <p class="text-slate-400 text-xs text-center mb-6">اختر نوع الحساب وادخل معلوماتك للانضمام</p>
+
+                <!-- Role Selector -->
+                <div class="grid grid-cols-2 gap-2 p-1 bg-slate-950 rounded-2xl border border-slate-800 mb-6">
+                    <button id="roleBtnEditor" onclick="switchAuthTab('editor')" class="py-2.5 rounded-xl text-sm font-bold transition-all bg-indigo-600 text-white shadow-md">
+                        👤 محرر (Editor)
+                    </button>
+                    <button id="roleBtnAdmin" onclick="switchAuthTab('admin')" class="py-2.5 rounded-xl text-sm font-bold transition-all text-slate-400 hover:text-slate-200">
+                        👑 أدمن (Admin)
+                    </button>
+                </div>
+
+                <!-- LOGIN FORM -->
+                <form id="loginForm" onsubmit="handleAuth(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 mb-1.5">اسم المستخدم</label>
+                        <input type="text" id="authUsername" required placeholder="ادخل اسمك هنا..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 transition text-white placeholder-slate-600">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 mb-1.5">كلمة المرور</label>
+                        <input type="password" id="authPassword" required placeholder="••••••••" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 transition text-white placeholder-slate-600">
+                        <p id="adminPassHint" class="hidden text-[11px] text-amber-400/80 mt-1">الباسورد الافتراضي للأدمن: <span class="font-mono font-bold">admin123</span></p>
+                    </div>
+
+                    <button type="submit" id="authSubmitBtn" class="w-full bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold py-3 rounded-xl shadow-lg shadow-indigo-600/30 transition text-sm">
+                        دخول أو تسجيل حساب جديد
+                    </button>
+                </form>
+
+                <p class="text-[11px] text-slate-500 text-center mt-4">
+                    * المحررون يمكنهم التسجيل فوراً دون موافقة مسبقة.
+                </p>
+            </div>
+        </section>
+
+        <!-- ================= ADMIN DASHBOARD ================= -->
+        <section id="adminDashboard" class="hidden space-y-6">
+            
+            <!-- Top Stats & Notification Alert Banner -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-bold text-slate-400 mb-1">إجمالي الإيديتورز</p>
+                        <h3 class="text-2xl font-black text-indigo-400" id="statEditorsCount">0</h3>
+                    </div>
+                    <div class="w-12 h-12 bg-indigo-500/10 rounded-xl flex items-center justify-center text-xl text-indigo-400">👥</div>
+                </div>
+
+                <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-bold text-slate-400 mb-1">المهام الكلية</p>
+                        <h3 class="text-2xl font-black text-violet-400" id="statTasksCount">0</h3>
+                    </div>
+                    <div class="w-12 h-12 bg-violet-500/10 rounded-xl flex items-center justify-center text-xl text-violet-400">📋</div>
+                </div>
+
+                <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-bold text-slate-400 mb-1">طلبات زيادة الراتب</p>
+                        <h3 class="text-2xl font-black text-amber-400" id="statNotifsCount">0</h3>
+                    </div>
+                    <div class="w-12 h-12 bg-amber-500/10 rounded-xl flex items-center justify-center text-xl text-amber-400">🔔</div>
+                </div>
+            </div>
+
+            <!-- Notifications Section -->
+            <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl">
+                <h3 class="text-base font-bold text-amber-400 mb-4 flex items-center gap-2">
+                    <span>🔔</span> الإشعارات وطلبات زيادات الراتب
+                </h3>
+                <div id="adminNotificationsList" class="space-y-3">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+
+            <!-- Manage Accounts (Unrestricted layout for easy access) -->
+            <div class="bg-slate-900 border border-rose-500/30 p-6 rounded-2xl shadow-xl">
+                <h3 class="text-base font-bold text-rose-400 mb-2 flex items-center gap-2">
+                    <span>🚫</span> إدارة وطرد الحسابات
+                </h3>
+                <p class="text-xs text-slate-400 mb-4">يمكنك طرد أي حساب وحذفه فوراً من المنظومة بالنقر على زر الحذف مقابل حسابه:</p>
+                <div id="adminAccountsList" class="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
+                    <!-- Populated dynamically without heights restrictions -->
+                </div>
+            </div>
+
+            <!-- Add Task & Add Video Controls -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Assign Task Form -->
+                <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl space-y-4">
+                    <h3 class="text-base font-bold text-indigo-400 flex items-center gap-2">
+                        <span>✏️</span> تعيين مهمة جديدة
+                    </h3>
+                    <form onsubmit="handleAddTask(event)" class="space-y-3">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-400 mb-1">المحرر المستهدف</label>
+                            <select id="taskAssignee" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-indigo-500 text-white">
+                                <!-- Populated dynamically -->
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-400 mb-1">تفاصيل المهمة</label>
+                            <input type="text" id="taskText" required placeholder="مثال: مونتاج فيديو التحدي الجديد..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-indigo-500 text-white placeholder-slate-600">
+                        </div>
+                        <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2.5 rounded-xl text-sm transition shadow-lg shadow-indigo-600/20">
+                            إضافة المهمة
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Add Video Form -->
+                <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl space-y-4">
+                    <h3 class="text-base font-bold text-violet-400 flex items-center gap-2">
+                        <span>🎬</span> إدراج فيديو بالجدول
+                    </h3>
+                    <form onsubmit="handleAddVideo(event)" class="space-y-3">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-400 mb-1">عنوان الفيديو</label>
+                            <input type="text" id="videoTitle" required placeholder="مثال: فيديو فلوغ السفر..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-violet-500 text-white placeholder-slate-600">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-400 mb-1">حالة الفيديو</label>
+                            <select id="videoStatus" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-violet-500 text-white">
+                                <option value="upcoming">ستنزل قريباً ⏳</option>
+                                <option value="released">نزلت بالفعل ✅</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="w-full bg-violet-600 hover:bg-violet-500 text-white font-bold py-2.5 rounded-xl text-sm transition shadow-lg shadow-violet-600/20">
+                            إضافة الفيديو
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Monitoring Split Lists (Tasks & Two Video Lists) -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                
+                <!-- Monitor Tasks -->
+                <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl">
+                    <h3 class="text-base font-bold text-slate-200 mb-4 flex items-center gap-2">
+                        <span>📊</span> متابعة جميع المهام
+                    </h3>
+                    <div id="adminTasksList" class="space-y-2.5 max-h-80 overflow-y-auto">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+
+                <!-- Monitor Videos (Two Separate Lists) -->
+                <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl space-y-4">
+                    <h3 class="text-base font-bold text-slate-200 flex items-center gap-2">
+                        <span>🎥</span> جدول الفيديوهات المسجلة
+                    </h3>
+
+                    <!-- List 1: Upcoming Videos -->
+                    <div class="bg-slate-950 p-4 rounded-xl border border-amber-500/20">
+                        <h4 class="text-xs font-bold text-amber-400 mb-2 flex items-center gap-1.5">
+                            <span>⏳</span> فيديوهات ستنزل قريباً
+                        </h4>
+                        <div id="adminUpcomingVideosList" class="space-y-2 max-h-36 overflow-y-auto">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- List 2: Released Videos -->
+                    <div class="bg-slate-950 p-4 rounded-xl border border-emerald-500/20">
+                        <h4 class="text-xs font-bold text-emerald-400 mb-2 flex items-center gap-1.5">
+                            <span>✅</span> فيديوهات نزلت بالفعل
+                        </h4>
+                        <div id="adminReleasedVideosList" class="space-y-2 max-h-36 overflow-y-auto">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </section>
+
+        <!-- ================= EDITOR DASHBOARD ================= -->
+        <section id="editorDashboard" class="hidden space-y-6">
+
+            <!-- Points Card & Redeem Action -->
+            <div class="bg-gradient-to-r from-indigo-900/60 to-violet-900/60 border border-indigo-500/30 p-6 rounded-3xl shadow-2xl flex flex-col md:flex-row justify-between items-center gap-6 relative overflow-hidden">
+                <div class="relative z-10">
+                    <p class="text-xs font-bold text-indigo-300 mb-1">رصيد نقاطك الحالي 🌟</p>
+                    <div class="flex items-baseline gap-2">
+                        <span id="myPointsDisplay" class="text-5xl font-black text-white">0</span>
+                        <span class="text-sm font-bold text-indigo-300">نقطة</span>
+                    </div>
+                    <p class="text-xs text-slate-400 mt-2">* كل مهمة تنجزها تمنحك 5 نقاط مباشرة.</p>
+                </div>
+
+                <div class="relative z-10 w-full md:w-auto text-center">
+                    <button onclick="requestSalaryIncrease()" class="w-full md:w-auto bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-extrabold px-6 py-3.5 rounded-2xl shadow-xl shadow-amber-500/20 transition transform active:scale-95 text-sm">
+                        🚀 تحويل 10 نقاط لزيادة راتب
+                    </button>
+                    <p class="text-[11px] text-slate-400 mt-2">يتطلب 10 نقاط على الأقل لإرسال إشعار للأدمن</p>
+                </div>
+            </div>
+
+            <!-- Editor Tasks List -->
+            <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl">
+                <h3 class="text-base font-bold text-indigo-400 mb-4 flex items-center gap-2">
+                    <span>📌</span> مهامك المطلوبة
+                </h3>
+                <div id="editorTasksList" class="space-y-3">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+
+            <!-- Two Separate Video Lists for Editor -->
+            <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl space-y-4">
+                <h3 class="text-base font-bold text-violet-400 flex items-center gap-2">
+                    <span>🎬</span> جدول الفيديوهات
+                </h3>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Upcoming Videos -->
+                    <div class="bg-slate-950 p-4 rounded-xl border border-amber-500/20">
+                        <h4 class="text-xs font-bold text-amber-400 mb-3 flex items-center gap-1.5">
+                            <span>⏳</span> فيديوهات ستنزل قريباً
+                        </h4>
+                        <div id="editorUpcomingVideosList" class="space-y-2 max-h-48 overflow-y-auto">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- Released Videos -->
+                    <div class="bg-slate-950 p-4 rounded-xl border border-emerald-500/20">
+                        <h4 class="text-xs font-bold text-emerald-400 mb-3 flex items-center gap-1.5">
+                            <span>✅</span> فيديوهات نزلت بالفعل
+                        </h4>
+                        <div id="editorReleasedVideosList" class="space-y-2 max-h-48 overflow-y-auto">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Leaderboard Section -->
+            <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl">
+                <h3 class="text-base font-bold text-amber-400 mb-4 flex items-center gap-2">
+                    <span>🏆</span> قائمة المتصدرين (Leaderboard)
+                </h3>
+                <div id="leaderboardList" class="space-y-2.5">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <footer class="border-t border-slate-900 py-4 text-center text-slate-600 text-xs">
+        منصة إدارة المهام للأصحاب © 2026
+    </footer>
+
+    <div id="customModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-slate-900 border border-slate-800 max-w-sm w-full rounded-2xl p-6 shadow-2xl text-center space-y-4">
+            <div id="modalIcon" class="text-3xl">ℹ️</div>
+            <h3 id="modalTitle" class="text-lg font-bold text-white">تنبيه</h3>
+            <p id="modalMessage" class="text-xs text-slate-400 leading-relaxed"></p>
+            <button onclick="closeModal()" class="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-2.5 rounded-xl text-xs transition">
+                حسناً
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // App Local State
+        let appState = {
+            currentRole: 'editor',
+            currentUser: null,
+            editors: [], 
+            tasks: [],   
+            videos: [],  
+            points: {},  
+            notifications: [] 
+        };
+
+        function loadStorage() {
+            const saved = localStorage.getItem('friends_app_state_v2');
+            if (saved) {
+                try {
+                    appState = JSON.parse(saved);
+                } catch(e) {
+                    console.error("Failed to load local state", e);
+                }
+            }
+        }
+
+        function saveStorage() {
+            localStorage.setItem('friends_app_state_v2', JSON.stringify(appState));
+        }
+
+        function switchAuthTab(role) {
+            appState.currentRole = role;
+            const btnEditor = document.getElementById('roleBtnEditor');
+            const btnAdmin = document.getElementById('roleBtnAdmin');
+            const passHint = document.getElementById('adminPassHint');
+
+            if (role === 'editor') {
+                btnEditor.className = "py-2.5 rounded-xl text-sm font-bold transition-all bg-indigo-600 text-white shadow-md";
+                btnAdmin.className = "py-2.5 rounded-xl text-sm font-bold transition-all text-slate-400 hover:text-slate-200";
+                passHint.classList.add('hidden');
+            } else {
+                btnAdmin.className = "py-2.5 rounded-xl text-sm font-bold transition-all bg-indigo-600 text-white shadow-md";
+                btnEditor.className = "py-2.5 rounded-xl text-sm font-bold transition-all text-slate-400 hover:text-slate-200";
+                passHint.classList.remove('hidden');
+            }
+        }
+
+        function handleAuth(e) {
+            e.preventDefault();
+            const usernameInput = document.getElementById('authUsername').value.trim();
+            const passwordInput = document.getElementById('authPassword').value.trim();
+
+            if (!usernameInput || !passwordInput) {
+                showAlert("خطأ", "يرجى ملء جميع الحقول المطلوب!");
+                return;
+            }
+
+            if (appState.currentRole === 'admin') {
+                if (passwordInput === 'admin123') {
+                    appState.currentUser = usernameInput;
+                    showDashboard('admin');
+                } else {
+                    showAlert("خطأ", "كلمة مرور الأدمن غير صحيحة! (الباسورد الافتراضي: admin123)");
+                }
+            } else {
+                let existingUser = appState.editors.find(u => u.username === usernameInput);
+
+                if (existingUser) {
+                    if (existingUser.password === passwordInput) {
+                        appState.currentUser = usernameInput;
+                        showDashboard('editor');
+                    } else {
+                        showAlert("خطأ", "كلمة المرور غير صحيحة لهذا الحساب!");
+                    }
+                } else {
+                    appState.editors.push({ username: usernameInput, password: passwordInput });
+                    if (appState.points[usernameInput] === undefined) {
+                        appState.points[usernameInput] = 0;
+                    }
+                    saveStorage();
+                    appState.currentUser = usernameInput;
+                    showAlert("مرحباً بك!", "تم إنشاء حساب إيديتور جديد بنجاح وتسجيل دخولك.");
+                    showDashboard('editor');
+                }
+            }
+        }
+
+        function showDashboard(role) {
+            document.getElementById('authSection').classList.add('hidden');
+            document.getElementById('headerActions').classList.remove('hidden');
+            document.getElementById('headerUsername').innerText = `${role === 'admin' ? '👑' : '👤'} ${appState.currentUser}`;
+            document.getElementById('headerUserRole').innerText = role === 'admin' ? 'صلاحية أدمن' : 'حساب محرر';
+
+            if (role === 'admin') {
+                document.getElementById('adminDashboard').classList.remove('hidden');
+                document.getElementById('editorDashboard').classList.add('hidden');
+                renderAdminPanel();
+            } else {
+                document.getElementById('editorDashboard').classList.remove('hidden');
+                document.getElementById('adminDashboard').classList.add('hidden');
+                renderEditorPanel();
+            }
+        }
+
+        function logout() {
+            appState.currentUser = null;
+            document.getElementById('authSection').classList.remove('hidden');
+            document.getElementById('adminDashboard').classList.add('hidden');
+            document.getElementById('editorDashboard').classList.add('hidden');
+            document.getElementById('headerActions').classList.add('hidden');
+            document.getElementById('headerUserRole').innerText = 'غير مسجل';
+            document.getElementById('authUsername').value = '';
+            document.getElementById('authPassword').value = '';
+        }
+
+        function handleAddTask(e) {
+            e.preventDefault();
+            const assignee = document.getElementById('taskAssignee').value;
+            const text = document.getElementById('taskText').value.trim();
+
+            if (!assignee) {
+                showAlert("تنبيه", "لا يوجد محررون مسجلون حالياً لإسناد المهمة لهم!");
+                return;
+            }
+
+            appState.tasks.push({
+                id: Date.now(),
+                assignee: assignee,
+                text: text,
+                done: false
+            });
+
+            saveStorage();
+            document.getElementById('taskText').value = '';
+            renderAdminPanel();
+            showAlert("تم!", "تمت إضافة المهمة بنجاح.");
+        }
+
+        function handleAddVideo(e) {
+            e.preventDefault();
+            const title = document.getElementById('videoTitle').value.trim();
+            const status = document.getElementById('videoStatus').value;
+
+            appState.videos.push({
+                id: Date.now(),
+                title: title,
+                status: status
+            });
+
+            saveStorage();
+            document.getElementById('videoTitle').value = '';
+            renderAdminPanel();
+            showAlert("تم!", "تمت إضافة الفيديو إلى الجدول.");
+        }
+
+        function deleteTask(id) {
+            appState.tasks = appState.tasks.filter(t => t.id !== id);
+            saveStorage();
+            renderAdminPanel();
+        }
+
+        function deleteVideo(id) {
+            appState.videos = appState.videos.filter(v => v.id !== id);
+            saveStorage();
+            renderAdminPanel();
+        }
+
+        function deleteUser(username) {
+            appState.editors = appState.editors.filter(e => e.username !== username);
+            appState.tasks = appState.tasks.filter(t => t.assignee !== username);
+            delete appState.points[username];
+            saveStorage();
+            renderAdminPanel();
+            showAlert("تم الحذف", `تم طرد وحذف حساب ${username} بنجاح.`);
+        }
+
+        function handleNotification(index, decision) {
+            const notif = appState.notifications[index];
+            if (decision === 'Agree') {
+                showAlert("تم التوافق ✅", `تمت الموافقة على طلب زيادة الراتب لـ ${notif.user}.`);
+            } else {
+                showAlert("تم الرفض ❌", `تم رفض طلب زيادة الراتب لـ ${notif.user}.`);
+            }
+            appState.notifications.splice(index, 1);
+            saveStorage();
+            renderAdminPanel();
+        }
+
+        function renderAdminPanel() {
+            document.getElementById('statEditorsCount').innerText = appState.editors.length;
+            document.getElementById('statTasksCount').innerText = appState.tasks.length;
+            document.getElementById('statNotifsCount').innerText = appState.notifications.length;
+
+            const taskAssigneeSelect = document.getElementById('taskAssignee');
+            if (appState.editors.length === 0) {
+                taskAssigneeSelect.innerHTML = '<option value="">لا يوجد محرر مسجل حالياً</option>';
+            } else {
+                taskAssigneeSelect.innerHTML = appState.editors.map(e => `
+                    <option value="${e.username}">${e.username}</option>
+                `).join('');
+            }
+
+            // Unrestricted Account Grid Layout
+            const adminAccountsList = document.getElementById('adminAccountsList');
+            if (appState.editors.length === 0) {
+                adminAccountsList.innerHTML = '<p class="text-slate-500 text-xs col-span-full py-2">لا توجد حسابات محررين مسجلة بعد.</p>';
+            } else {
+                adminAccountsList.innerHTML = appState.editors.map(e => `
+                    <div class="flex justify-between items-center bg-slate-950 p-3.5 rounded-xl border border-slate-800 hover:border-slate-700 transition">
+                        <span class="font-bold text-slate-200 text-sm">👤 ${e.username}</span>
+                        <button onclick="deleteUser('${e.username}')" class="bg-rose-600 hover:bg-rose-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-md shadow-rose-600/20">طرد وحذف</button>
+                    </div>
+                `).join('');
+            }
+
+            const tasksList = document.getElementById('adminTasksList');
+            if (appState.tasks.length === 0) {
+                tasksList.innerHTML = '<p class="text-slate-500 text-xs py-2">لا توجد مهام مسجلة.</p>';
+            } else {
+                tasksList.innerHTML = appState.tasks.map(t => `
+                    <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 flex justify-between items-center text-xs">
+                        <div>
+                            <span class="text-indigo-400 font-bold">[${t.assignee}]</span>
+                            <span class="text-slate-300 font-semibold mr-1">${t.text}</span>
+                            <span class="block text-[10px] mt-0.5 ${t.done ? 'text-emerald-400' : 'text-amber-400'}">${t.done ? 'مكتملة ✓' : 'قيد الانتظار'}</span>
+                        </div>
+                        <button onclick="deleteTask(${t.id})" class="text-rose-400 hover:text-rose-300 font-bold">حذف</button>
+                    </div>
+                `).join('');
+            }
+
+            const adminUpcomingVideosList = document.getElementById('adminUpcomingVideosList');
+            const adminReleasedVideosList = document.getElementById('adminReleasedVideosList');
+
+            const upcoming = appState.videos.filter(v => v.status === 'upcoming');
+            const released = appState.videos.filter(v => v.status === 'released');
+
+            if (upcoming.length === 0) {
+                adminUpcomingVideosList.innerHTML = '<p class="text-slate-600 text-xs">لا توجد فيديوهات قادمة.</p>';
+            } else {
+                adminUpcomingVideosList.innerHTML = upcoming.map(v => `
+                    <div class="bg-slate-900 p-2.5 rounded-lg border border-slate-800 flex justify-between items-center text-xs">
+                        <span class="text-slate-300">🎬 ${v.title}</span>
+                        <button onclick="deleteVideo(${v.id})" class="text-rose-400 hover:text-rose-300 font-bold">حذف</button>
+                    </div>
+                `).join('');
+            }
+
+            if (released.length === 0) {
+                adminReleasedVideosList.innerHTML = '<p class="text-slate-600 text-xs">لا توجد فيديوهات تم إنزالها.</p>';
+            } else {
+                adminReleasedVideosList.innerHTML = released.map(v => `
+                    <div class="bg-slate-900 p-2.5 rounded-lg border border-slate-800 flex justify-between items-center text-xs">
+                        <span class="text-slate-300">🎬 ${v.title}</span>
+                        <button onclick="deleteVideo(${v.id})" class="text-rose-400 hover:text-rose-300 font-bold">حذف</button>
+                    </div>
+                `).join('');
+            }
+
+            const notifList = document.getElementById('adminNotificationsList');
+            if (appState.notifications.length === 0) {
+                notifList.innerHTML = '<p class="text-slate-500 text-xs py-2">لا توجد طلبات زيادة راتب حالياً.</p>';
+            } else {
+                notifList.innerHTML = appState.notifications.map((n, idx) => `
+                    <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+                        <div>
+                            <p class="font-bold text-amber-300 text-sm">طلب ${n.user} تحويل 10 نقاط لزيادة الراتب!</p>
+                            <span class="text-[10px] text-slate-500">${n.time}</span>
+                        </div>
+                        <div class="flex gap-2 w-full md:w-auto">
+                            <button onclick="handleNotification(${idx}, 'Agree')" class="flex-1 md:flex-none bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition">موافقة (Agree)</button>
+                            <button onclick="handleNotification(${idx}, 'Disagree')" class="flex-1 md:flex-none bg-rose-600 hover:bg-rose-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition">رفض (Disagree)</button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+
+        function completeTask(id) {
+            const task = appState.tasks.find(t => t.id === id);
+            if (task && !task.done) {
+                task.done = true;
+                const user = appState.currentUser;
+                appState.points[user] = (appState.points[user] || 0) + 5;
+                saveStorage();
+                renderEditorPanel();
+                showAlert("ممتاز! 🎉", "تم إنجاز المهمة وإضافة 5 نقاط لرصيدك.");
+            }
+        }
+
+        function requestSalaryIncrease() {
+            const user = appState.currentUser;
+            const currentPts = appState.points[user] || 0;
+
+            if (currentPts < 10) {
+                showAlert("نقاط غير كافية", `تحتاج إلى 10 نقاط على الأقل، رصيدك الحالي هو ${currentPts} نقطة.`);
+                return;
+            }
+
+            appState.points[user] -= 10;
+            appState.notifications.push({
+                id: Date.now(),
+                user: user,
+                time: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })
+            });
+
+            saveStorage();
+            renderEditorPanel();
+            showAlert("تم إرسال الطلب! 🚀", "تم خصم 10 نقاط وإرسال إشعار للأدمن لمراجعة زيادة الراتب.");
+        }
+
+        function renderEditorPanel() {
+            const currentEditor = appState.currentUser;
+
+            const points = appState.points[currentEditor] || 0;
+            document.getElementById('myPointsDisplay').innerText = points;
+
+            const leaderboardList = document.getElementById('leaderboardList');
+            const registeredUsernames = appState.editors.map(e => e.username);
+            const editorPointsEntries = Object.entries(appState.points).filter(([user]) => registeredUsernames.includes(user));
+
+            if (editorPointsEntries.length === 0) {
+                leaderboardList.innerHTML = '<p class="text-slate-500 text-xs py-2">لا يوجد محررون مسجلون حالياً.</p>';
+            } else {
+                const sortedPoints = editorPointsEntries.sort((a, b) => b[1] - a[1]);
+                leaderboardList.innerHTML = sortedPoints.map(([user, pts], index) => `
+                    <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 flex justify-between items-center text-xs">
+                        <div class="flex items-center gap-3">
+                            <span class="font-bold text-indigo-400">#${index + 1}</span>
+                            <span class="${user === currentEditor ? 'text-emerald-400 font-bold' : 'text-slate-300'}">${user} ${user === currentEditor ? '(أنت)' : ''}</span>
+                        </div>
+                        <span class="bg-indigo-600/20 text-indigo-300 px-3 py-1 rounded-lg font-bold">${pts} نقطة</span>
+                    </div>
+                `).join('');
+            }
+
+            const editorTasksList = document.getElementById('editorTasksList');
+            const myTasks = appState.tasks.filter(t => t.assignee === currentEditor);
+
+            if (myTasks.length === 0) {
+                editorTasksList.innerHTML = '<p class="text-slate-500 text-xs py-2">ليس لديك مهام مطلوبة حالياً.</p>';
+            } else {
+                editorTasksList.innerHTML = myTasks.map(t => `
+                    <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 flex justify-between items-center">
+                        <span class="${t.done ? 'line-through text-slate-500' : 'text-white'} font-semibold text-xs md:text-sm">${t.text}</span>
+                        ${t.done ? '<span class="text-emerald-400 font-bold text-xs">مكتملة ✓</span>' : `<button onclick="completeTask(${t.id})" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-2 rounded-xl text-xs shadow-lg shadow-emerald-600/20 transition">Done (+5 نقاط)</button>`}
+                    </div>
+                `).join('');
+            }
+
+            const editorUpcomingVideosList = document.getElementById('editorUpcomingVideosList');
+            const editorReleasedVideosList = document.getElementById('editorReleasedVideosList');
+
+            const upcoming = appState.videos.filter(v => v.status === 'upcoming');
+            const released = appState.videos.filter(v => v.status === 'released');
+
+            if (upcoming.length === 0) {
+                editorUpcomingVideosList.innerHTML = '<p class="text-slate-600 text-xs">لا توجد فيديوهات قادمة حالياً.</p>';
+            } else {
+                editorUpcomingVideosList.innerHTML = upcoming.map(v => `
+                    <div class="bg-slate-900 p-2.5 rounded-lg border border-slate-800 text-xs text-slate-300 font-semibold">
+                        🎬 ${v.title}
+                    </div>
+                `).join('');
+            }
+
+            if (released.length === 0) {
+                editorReleasedVideosList.innerHTML = '<p class="text-slate-600 text-xs">لا توجد فيديوهات تم إنزالها بعد.</p>';
+            } else {
+                editorReleasedVideosList.innerHTML = released.map(v => `
+                    <div class="bg-slate-900 p-2.5 rounded-lg border border-slate-800 text-xs text-slate-300 font-semibold">
+                        🎬 ${v.title}
+                    </div>
+                `).join('');
+            }
+        }
+
+        function showAlert(title, message) {
+            document.getElementById('modalTitle').innerText = title;
+            document.getElementById('modalMessage').innerText = message;
+            document.getElementById('customModal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('customModal').classList.add('hidden');
+        }
+
+        window.onload = function() {
+            loadStorage();
+        };
+    </script>
+</body>
+</html>
